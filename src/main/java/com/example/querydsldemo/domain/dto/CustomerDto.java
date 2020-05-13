@@ -1,13 +1,18 @@
 package com.example.querydsldemo.domain.dto;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
+/**
+ * @Desc
+ * @Created By liukuihan
+ * @date on 2020/5/13
+ */
 @Data
-@AllArgsConstructor
-@NoArgsConstructor
-public class CustomerDto {
+public class CustomerDto  {
     private String id;
     private String name;
+    private Integer gender;
+    private String phone;
+    private String companyId;
+    private Integer age;
 }

@@ -15,7 +15,7 @@ import javax.persistence.*;
 @NoArgsConstructor
 public class Customer extends EntityBase {
     private String name;
-    private int sex;
+    private int gender;
     private String phone;
     private String companyId;
     private Integer age;
