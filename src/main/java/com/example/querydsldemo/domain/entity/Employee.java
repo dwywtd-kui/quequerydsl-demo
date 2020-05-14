@@ -2,22 +2,24 @@ package com.example.querydsldemo.domain.entity;
 
 import lombok.Data;
 import org.hibernate.annotations.GenericGenerator;
-
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 
 @Entity
-@Table(name = "company")
+@Table(name = "employee")
 @Data
-public class Company{
+public class Employee {
     @Id
     @GenericGenerator(name = "idGeneratorUUID",strategy = "uuid")
     @GeneratedValue(generator = "idGeneratorUUID")
     private String id;
-    /**公司名称*/
+    /**员工名称*/
     private String name;
-    /**公司所在城市*/
-    private String city;
+    /**员工性别*/
+    private int gender;
+    /**员工电话*/
+    private String phone;
+    /**所在公司ID*/
+    private String companyId;
+    /**员工年龄*/
+    private Integer age;
 }

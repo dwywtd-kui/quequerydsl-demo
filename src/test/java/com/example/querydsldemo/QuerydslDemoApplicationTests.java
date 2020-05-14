@@ -1,177 +1,307 @@
 package com.example.querydsldemo;
 
-import com.example.querydsldemo.domain.dto.Customer2Dto;
-import com.example.querydsldemo.domain.dto.CustomerDto;
+import com.example.querydsldemo.domain.dto.EmployeeDto2;
+import com.example.querydsldemo.domain.dto.EmployeeDyo1;
 import com.example.querydsldemo.domain.entity.Company;
-import com.example.querydsldemo.domain.entity.Customer;
+import com.example.querydsldemo.domain.entity.Employee;
 import com.example.querydsldemo.domain.entity.querydsl.QCompany;
-import com.example.querydsldemo.domain.entity.querydsl.QCustomer;
-import com.example.querydsldemo.repository.CompanyRepository;
-import com.example.querydsldemo.repository.CustomerRepository;
-import com.example.querydsldemo.service.ICustomerService;
+import com.example.querydsldemo.domain.entity.querydsl.QEmployee;
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.JPAExpressions;
+import com.querydsl.jpa.JPQLQuery;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import lombok.extern.slf4j.Slf4j;
+import org.hibernate.criterion.Projection;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.transaction.annotation.Transactional;
 
-import javax.transaction.Transactional;
+import java.util.ArrayList;
 import java.util.List;
 
 @SpringBootTest
-@Slf4j
 class QuerydslDemoApplicationTests {
 
     @Autowired
-    private JPAQueryFactory queryFactory;
+    private JPAQueryFactory jpaQueryFactory;
 
-    @Autowired
-    private ICustomerService customerService;
-
+    private QCompany qCompany = QCompany.company;
+    private QEmployee qEmployee = QEmployee.employee;
 
     @Test
-    void findOne(){
-        String id = "1";
-        CustomerDto customerDto = customerService.findById(id);
-        if (customerDto==null) {
-            log.info("the customer does not exist!");
-        }else {
-            log.info(customerDto.toString());
+    public void findAll(){
+        JPAQuery<Employee> jpaQuery = jpaQueryFactory.selectFrom(qEmployee);
+        List<Employee> employees = jpaQuery.fetch();
+        System.out.println("员工信息如下：");
+        for (Employee employee : employees) {
+            System.out.println("------分割线------");
+            System.out.println(employee.toString());
         }
     }
 
     @Test
-    void findByGender(){
-        int gender = 1;
-        List<CustomerDto> dtos = customerService.findByGender(gender);
-        log.info(dtos.toString());
+    public void findById() {
+        String id = "1";
+        JPAQuery<Employee> jpaQuery = jpaQueryFactory.selectFrom(qEmployee).where(qEmployee.id.eq(id));
+        //.selectFrom(entity) == .select(entity).from (entity)
+        Employee employee = jpaQuery.fetchOne();
+        if (employee ==null) {
+            System.out.println("ID为" + id + "的员工不存在！");
+        } else {
+            System.out.println("员工信息："+employee.toString());
+        }
     }
 
     @Test
-    void findByGenderAndAgeGt(){
+    public void findByGender() {
+        int gender = 1;//男
+        JPAQuery<Employee> jpaQuery = jpaQueryFactory.selectFrom(qEmployee).where(qEmployee.gender.eq(gender)).distinct();
+        List<Employee> employees = jpaQuery.fetch();
+
+        System.out.println("员工信息如下：");
+        for (Employee employee : employees) {
+            System.out.println("------分割线------");
+            System.out.println(employee.toString());
+        }
+    }
+
+    @Test
+    public void findByLikeName() {
+        String name = "%刘%";//男
+        JPAQuery<Employee> jpaQuery = jpaQueryFactory.selectFrom(qEmployee).where(qEmployee.name.like(name)).distinct();
+        List<Employee> employees = jpaQuery.fetch();
+
+        System.out.println("员工信息如下：");
+        for (Employee employee : employees) {
+            System.out.println("------分割线------");
+            System.out.println(employee.toString());
+        }
+    }
+
+
+
+    @Test
+    public void findByGenderAndAgeGt() {
         int gender = 1;
         int age = 21;
-        List<CustomerDto> dtos = customerService.findByGenderAndAgeGt(gender, age);
-        log.info(dtos.toString());
+        JPAQuery<Employee> jpaQuery = jpaQueryFactory.selectFrom(qEmployee).where(qEmployee.gender.eq(gender), qEmployee.age.gt(age));
+        //.where(qEmployee.gender.eq(gender), qEmployee.age.gt(age)) = .where(qEmployee.gender.eq(gender).and(qEmployee.age.gt(age))
+        List<Employee> employees = jpaQuery.fetch();
+        System.out.println("员工信息如下：");
+        for (Employee employee : employees) {
+            System.out.println("------分割线------");
+            System.out.println(employee.toString());
+        }
     }
 
     @Test
-    void findByNameOrAgeGt(){
+    public void findByNameOrAgeGt() {
         String name="李白";
         int age = 25;
-        List<CustomerDto> dtos = customerService.findByNameOrAgeGt(name, age);
-        log.info(dtos.toString());
+        JPAQuery<Employee> jpaQuery = jpaQueryFactory.selectFrom(qEmployee).where(qEmployee.name.eq(name).or(qEmployee.age.gt(age)));
+        List<Employee> employees = jpaQuery.fetch();
+
+        for (Employee employee : employees) {
+            System.out.println("------分割线------");
+            System.out.println(employee.toString());
+        }
+    }
+
+    @Test
+    public void findAllPaged(){
+        //第2页，每页2条数据
+        int page = 2;
+        int size = 2;
+        JPAQuery<Employee> jpaQuery = jpaQueryFactory.selectFrom(qEmployee).offset((page-1)*size).limit(size);
+        List<Employee> employees = jpaQuery.fetch();
+        System.out.println("员工信息如下：");
+        for (Employee employee : employees) {
+            System.out.println("------分割线------");
+            System.out.println(employee.toString());
+        }
+    }
+
+
+    @Test
+    void findNameAndAge(){
+        List<Tuple> tuples = jpaQueryFactory.select(qEmployee.name, qEmployee.age).from(qEmployee).fetch();
+        System.out.println("员工信息如下：");
+        for (Tuple tuple:tuples){
+            System.out.println("name="+tuple.get(qEmployee.name)+",age="+tuple.get(qEmployee.age));
+        }
     }
 
     /**
-     * 表连接查询，无需建立两个实体之间关系
+     * bean 映射
      */
     @Test
-    void findCustomersByCompanyName(){
-        String name="三国";
-        List<CustomerDto> dtos = customerService.findByCompanyName(name);
-        log.info(dtos.toString());
+    void findEmployeeDyo1(){
+        List<EmployeeDyo1> employeeDyo1s = jpaQueryFactory
+                .select(
+                Projections.bean(EmployeeDyo1.class,
+                        qEmployee.id,
+                        qEmployee.name,
+                        qEmployee.age))
+                .from(qEmployee).fetch();
+
+        System.out.println("员工信息如下：");
+        for (EmployeeDyo1 dyo1:employeeDyo1s){
+            System.out.println("------分割线------");
+            System.out.println(dyo1.toString());
+        }
     }
 
+    @Test
+    void findEmployeeDyo2(){
+        List<EmployeeDto2> EmployeeDto2s = jpaQueryFactory
+                .select(
+                Projections.bean(EmployeeDto2.class,
+                        qEmployee.id,
+                        qEmployee.name,
+                        qEmployee.age))
+                .from(qEmployee).fetch();
+        System.out.println("员工信息如下：");
+        for (EmployeeDto2 dto:EmployeeDto2s){
+            System.out.println("------分割线------");
+            System.out.println(dto.toString());
+        }
+    }
 
     @Test
-    void findByCompanyNameLeftJoin(){
+    void findEmployeeDto3(){
+        List<EmployeeDto2> EmployeeDto2s = jpaQueryFactory
+                .select(
+                        Projections.bean(EmployeeDto2.class,
+                                qEmployee.id.as("code"),//指定as为我们需要的字段名称code
+                                qEmployee.name.as("userName"), //指定as为我们需要的字段名称userName
+                                qEmployee.age))
+                .from(qEmployee).fetch();
+        System.out.println("员工信息如下：");
+        for (EmployeeDto2 dto:EmployeeDto2s){
+            System.out.println("------分割线------");
+            System.out.println(dto.toString());
+        }
+    }
+
+    //EmployeeDto2(String code,String userName,int age)
+    @Test
+    void findEmployeeDto4(){
+        List<EmployeeDto2> EmployeeDto2s = jpaQueryFactory
+                .select(
+                        Projections.constructor(EmployeeDto2.class,
+                                qEmployee.id,
+                                qEmployee.name,
+                                qEmployee.age))
+                .from(qEmployee).fetch();
+        System.out.println("员工信息如下：");
+        for (EmployeeDto2 dto:EmployeeDto2s){
+            System.out.println("------分割线------");
+            System.out.println(dto.toString());
+        }
+    }
+
+    @Test
+    public void findEmployeesByCompanyName() {
         String name = "三国";
-        List<CustomerDto> dtos = customerService.findByCompanyNameLeftJoin(name);
-        log.info(dtos.toString());
+        // JPAQuery<Customer> jpaQuery = jpaQueryFactory.select(qEmployee).from(qCompany, qEmployee).where(qCompany.id.eq(qEmployee.companyId).and(qCompany.name.eq(name)));
+        JPAQuery<Employee> jpaQuery = jpaQueryFactory
+                .select(qEmployee)
+                .from(qEmployee)
+                .rightJoin(qCompany)
+                .on(qCompany.id.eq(qEmployee.companyId))
+                .where(qCompany.name.eq(name));
+
+        List<Employee> employees = jpaQuery.fetch();
+        System.out.println("员工信息如下：");
+        for (Employee employee : employees) {
+            System.out.println("------分割线------");
+            System.out.println(employee.toString());
+        }
     }
 
     @Test
-    void findCompanyAndCustomerByCompanyName(){
+    public void findEmployeesInCompanyInShangHai() {
         String name = "三国";
-        List<Tuple> tuples = customerService.findCompanyAndCustomerByCompanyName(name);
-        log.info(tuples.toString());
+
+        JPQLQuery<String> jpqlQuery = JPAExpressions
+                .select(qCompany.id)
+                .from(qCompany)
+                .where(qCompany.city.eq("上海"));
+
+        List<Employee> employees = jpaQueryFactory.selectFrom(qEmployee)
+                .where(qEmployee.companyId.in(jpqlQuery)
+                ).fetch();
+
+        System.out.println("员工信息如下：");
+        for (Employee employee : employees) {
+            System.out.println("------分割线------");
+            System.out.println(employee.toString());
+        }
     }
 
-
-    /**
-     * 测试查询排序 orderBy
-     */
     @Test
-    void testOrderBy(){
-        QCustomer qCustomer = QCustomer.customer;
-        JPAQuery<Customer> query = queryFactory.selectFrom(qCustomer).orderBy(qCustomer.age.asc(), qCustomer.gender.asc());
-        List<Customer> customers = query.fetch();
-        customers.forEach(customer -> {
-            System.out.println("----分割线----");
-            System.out.println(customer);
-        });
+    @Transactional() //更新需加入事务，不然抛出异常 Executing an update/delete query
+    public void updateEmployee(){
+        long execute = jpaQueryFactory.update(qEmployee)
+                .set(qEmployee.age, 100)
+                .set(qEmployee.phone, "10009")
+                .where(qEmployee.name.eq("李白"))
+                .execute();
+        System.out.println("更新成功，影响了"+execute+"条数据！");
     }
 
-    /**
-     * 测试分组查询 groupBy
-     */
+
+    @Test
+    @Transactional() //删除需加入事务，不然抛出异常 Executing an update/delete query
+    void deleteEmployee(){
+        long result = jpaQueryFactory.delete(qEmployee).where(qEmployee.age.gt(30)).execute();
+        System.out.println("删除更成功，影响了"+result+"条数据！");
+    }
+
+
+
+    @Test
+    void analyzeEmployee(){
+        long count = jpaQueryFactory
+                .selectFrom(qEmployee)
+                .fetchCount();
+        //Long count = jpaQueryFactory.select(qEmployee.count()).from(qEmployee).fetchOne();
+        System.out.println("用户表中共有"+count+"条数据！");
+
+        Integer sum = jpaQueryFactory
+                .select(qEmployee.age.sum())
+                .from(qEmployee).fetchOne();
+        System.out.println("员工总年龄是"+sum);
+
+        Integer max = jpaQueryFactory.select(qEmployee.age.max()).from(qEmployee).fetchOne();
+        System.out.println("员工最大年龄是"+max);
+
+        Integer min = jpaQueryFactory.select(qEmployee.age.min()).from(qEmployee).fetchOne();
+        System.out.println("员工最大年龄是"+min);
+
+        Double avg = jpaQueryFactory.select(qEmployee.age.avg()).from(qEmployee).fetchOne();
+        System.out.println("员工平均年龄是"+avg);
+    }
+
+
+
+
     @Test
     void testGroupBy(){
-        QCustomer qCustomer = QCustomer.customer;
-        JPAQuery<Tuple> query = queryFactory.select(qCustomer.count(), qCustomer.gender).from(qCustomer).groupBy(qCustomer.gender);
-        List<Tuple> tuples = query.fetch();
-        System.out.println("----查询结果----");
-        tuples.forEach(tuple -> {
-            System.out.println("sex="+tuple.get(1,int.class)+"的客户有"+tuple.get(0,Long.class)+"人");
-        });
-    }
+        List<Tuple> tuples = jpaQueryFactory.select(qCompany.city, qEmployee.age.avg())
+                .from(qCompany, qEmployee)
+                .where(qEmployee.companyId.eq(qCompany.id))
+                .groupBy(qCompany.city).fetch();
 
-    /**
-     * 测试删除
-     * 删除需加入事务，不然抛出异常 Executing an update/delete query
-     */
-    @Test
-    @Transactional()
-    void testDelete(){
-        QCustomer qCustomer = QCustomer.customer;
-        //queryFactory.delete(qCustomer).execute();//删除全部
-        long result = queryFactory.delete(qCustomer).where(qCustomer.age.gt(30)).execute();
-        System.out.println("影响了"+result+"条数据");
-    }
-
-    /**
-     * 测试数据更新
-     * 删除需加入事务，不然抛出异常 Executing an update/delete query
-     */
-    @Test
-    @Transactional
-    void testUpdate(){
-        QCustomer qCustomer = QCustomer.customer;
-        long result = queryFactory.update(qCustomer).set(qCustomer.phone,"1001010086").set(qCustomer.age,22).where(qCustomer.age.gt(30)).execute();
-        System.out.println("影响了"+result+"条数据");
-    }
-
-    /**
-     * 测试子查询
-     */
-    @Test
-    void testChildQuery(){
-        QCustomer qCustomer = QCustomer.customer;
-        QCompany qCompany = QCompany.company;
-        JPAQuery<Customer> query = queryFactory.selectFrom(qCustomer).where(qCustomer.age.gt(20).and(qCustomer.companyId.in(
-                JPAExpressions.select(qCompany.id).from(qCompany).where(qCompany.city.eq("北京"))
-        )));
-        List<Customer> customers = query.fetch();
-        customers.forEach(customer -> {
-            System.out.println("---分割线---");
-            System.out.println(customer);
-        });
-    }
-
-    @Test
-    void testReflectDto(){
-        QCustomer qCustomer = QCustomer.customer;
-        JPAQuery<Customer2Dto> query = queryFactory.select(Projections.constructor(Customer2Dto.class, qCustomer.id, qCustomer.name)).from(qCustomer);
-        List<Customer2Dto> dtos = query.fetch();
-        dtos.forEach(dto->{
-            System.out.println("---分割线---");
-            System.out.println(dto.toString());
-        });
+        System.out.println("查询结果：");
+        for (Tuple tuple:tuples){
+            String city = tuple.get(qCompany.city);
+            Double avg = tuple.get(qEmployee.age.avg());
+            System.out.println(city+"城市的平均员工年龄是："+avg);
+        }
     }
 
 }

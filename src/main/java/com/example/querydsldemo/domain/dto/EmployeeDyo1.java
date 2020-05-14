@@ -8,11 +8,8 @@ import lombok.Data;
  * @date on 2020/5/13
  */
 @Data
-public class CustomerDto  {
+public class EmployeeDyo1 {
     private String id;
     private String name;
-    private Integer gender;
-    private String phone;
-    private String companyId;
     private Integer age;
 }
