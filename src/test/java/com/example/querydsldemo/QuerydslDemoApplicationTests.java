@@ -10,8 +10,7 @@ import com.querydsl.core.Tuple;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.JPQLQuery;
-import com.querydsl.jpa.impl.JPAQuery;
-import com.querydsl.jpa.impl.JPAQueryFactory;
+import com.querydsl.jpa.JPQLQueryFactory;
 import org.hibernate.criterion.Projection;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.BeanUtils;
@@ -26,14 +25,14 @@ import java.util.List;
 class QuerydslDemoApplicationTests {
 
     @Autowired
-    private JPAQueryFactory jpaQueryFactory;
+    private JPQLQueryFactory jpaQueryFactory;
 
     private QCompany qCompany = QCompany.company;
     private QEmployee qEmployee = QEmployee.employee;
 
     @Test
     public void findAll(){
-        JPAQuery<Employee> jpaQuery = jpaQueryFactory.selectFrom(qEmployee);
+        JPQLQuery<Employee> jpaQuery = jpaQueryFactory.selectFrom(qEmployee);
         List<Employee> employees = jpaQuery.fetch();
         System.out.println("员工信息如下：");
         for (Employee employee : employees) {
@@ -45,7 +44,7 @@ class QuerydslDemoApplicationTests {
     @Test
     public void findById() {
         String id = "1";
-        JPAQuery<Employee> jpaQuery = jpaQueryFactory.selectFrom(qEmployee).where(qEmployee.id.eq(id));
+        JPQLQuery<Employee> jpaQuery = jpaQueryFactory.selectFrom(qEmployee).where(qEmployee.id.eq(id));
         //.selectFrom(entity) == .select(entity).from (entity)
         Employee employee = jpaQuery.fetchOne();
         if (employee ==null) {
@@ -58,7 +57,7 @@ class QuerydslDemoApplicationTests {
     @Test
     public void findByGender() {
         int gender = 1;//男
-        JPAQuery<Employee> jpaQuery = jpaQueryFactory.selectFrom(qEmployee).where(qEmployee.gender.eq(gender)).distinct();
+        JPQLQuery<Employee> jpaQuery = jpaQueryFactory.selectFrom(qEmployee).where(qEmployee.gender.eq(gender)).distinct();
         List<Employee> employees = jpaQuery.fetch();
 
         System.out.println("员工信息如下：");
@@ -71,7 +70,7 @@ class QuerydslDemoApplicationTests {
     @Test
     public void findByLikeName() {
         String name = "%刘%";//男
-        JPAQuery<Employee> jpaQuery = jpaQueryFactory.selectFrom(qEmployee).where(qEmployee.name.like(name)).distinct();
+        JPQLQuery<Employee> jpaQuery = jpaQueryFactory.selectFrom(qEmployee).where(qEmployee.name.like(name)).distinct();
         List<Employee> employees = jpaQuery.fetch();
 
         System.out.println("员工信息如下：");
@@ -87,7 +86,7 @@ class QuerydslDemoApplicationTests {
     public void findByGenderAndAgeGt() {
         int gender = 1;
         int age = 21;
-        JPAQuery<Employee> jpaQuery = jpaQueryFactory.selectFrom(qEmployee).where(qEmployee.gender.eq(gender), qEmployee.age.gt(age));
+        JPQLQuery<Employee> jpaQuery = jpaQueryFactory.selectFrom(qEmployee).where(qEmployee.gender.eq(gender), qEmployee.age.gt(age));
         //.where(qEmployee.gender.eq(gender), qEmployee.age.gt(age)) = .where(qEmployee.gender.eq(gender).and(qEmployee.age.gt(age))
         List<Employee> employees = jpaQuery.fetch();
         System.out.println("员工信息如下：");
@@ -101,7 +100,7 @@ class QuerydslDemoApplicationTests {
     public void findByNameOrAgeGt() {
         String name="李白";
         int age = 25;
-        JPAQuery<Employee> jpaQuery = jpaQueryFactory.selectFrom(qEmployee).where(qEmployee.name.eq(name).or(qEmployee.age.gt(age)));
+        JPQLQuery<Employee> jpaQuery = jpaQueryFactory.selectFrom(qEmployee).where(qEmployee.name.eq(name).or(qEmployee.age.gt(age)));
         List<Employee> employees = jpaQuery.fetch();
 
         for (Employee employee : employees) {
@@ -115,7 +114,7 @@ class QuerydslDemoApplicationTests {
         //第2页，每页2条数据
         int page = 2;
         int size = 2;
-        JPAQuery<Employee> jpaQuery = jpaQueryFactory.selectFrom(qEmployee).offset((page-1)*size).limit(size);
+        JPQLQuery<Employee> jpaQuery = jpaQueryFactory.selectFrom(qEmployee).offset((page-1)*size).limit(size);
         List<Employee> employees = jpaQuery.fetch();
         System.out.println("员工信息如下：");
         for (Employee employee : employees) {
@@ -206,8 +205,8 @@ class QuerydslDemoApplicationTests {
     @Test
     public void findEmployeesByCompanyName() {
         String name = "三国";
-        // JPAQuery<Customer> jpaQuery = jpaQueryFactory.select(qEmployee).from(qCompany, qEmployee).where(qCompany.id.eq(qEmployee.companyId).and(qCompany.name.eq(name)));
-        JPAQuery<Employee> jpaQuery = jpaQueryFactory
+        // JPQLQuery<Customer> jpaQuery = jpaQueryFactory.select(qEmployee).from(qCompany, qEmployee).where(qCompany.id.eq(qEmployee.companyId).and(qCompany.name.eq(name)));
+        JPQLQuery<Employee> jpaQuery = jpaQueryFactory
                 .select(qEmployee)
                 .from(qEmployee)
                 .rightJoin(qCompany)
